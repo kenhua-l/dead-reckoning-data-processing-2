@@ -2,29 +2,35 @@ using DataFrames
 #rate is 70, 75, 80
 #threshold could be 1.2-1.5
 #ARGS should be fileName, startpoint, endpoint, rate, threshold
-x = ARGS
-accel = x[1]
-println(accel, " ", x[2], " ", x[3]," ", x[4]," ", x[5])
+folder = ARGS[1]
+startpoint = 1
+endpoint = 2290
+rate = 80
+threshold = 1.5
+# println(accel, " ", x[2], " ", x[3]," ", x[4]," ", x[5])
 
-A = readtable("$accel.txt", separator='\t')
+A = readtable("$folder/Accelerometer.txt", separator='\t')
+B = readtable("$folder/Orientation.txt", separator='\t')
 row_number=size(A, 1)
 A[:index] = 1:row_number
-todelete = parse(Int, x[2]) .< A[:index] .< parse(Int, x[3])
+todelete = startpoint .< A[:index] .< endpoint
 A = A[todelete,:]
-delete!(A,:index)
+# delete!(A,:index)
 
 row_number=size(A, 1) #update row_number
-rate = parse(Int, x[4])
+# rate = parse(Int, x[4])
 t=1/rate
-axOffset = -0.01
-ayOffset = 0.23
-azOffset = -0.17
-#axOffset = 0
-#ayOffset = 0
-#azOffset = 0
-threshold = parse(Float64, x[5])
+# axOffset = -0.01
+# ayOffset = 0.23
+# azOffset = -0.17
+axOffset = 0
+ayOffset = 0
+azOffset = 0
+# threshold = parse(Float64, x[5])
 noStep=0
 flagUp=0
+timestamp=[]
+angle=[]
 D=sqrt((A[1,2]-axOffset).^2+(A[1,3]-ayOffset).^2+(A[1,4]-azOffset).^2)
 stepLength=[0 0 0]
 meanA=[A[1,2] A[1,3] A[1,4]]
@@ -46,15 +52,15 @@ for i=2:row_number
     else
       flagUp=0
     end
-
     stepPt = vcat(stepPt,[ind D])
     D = accNorm
     ind = i
 
     if noStep == 0
-      noStep = noStep+1
+        push!(timestamp, A[i,:TIMESTAMP])
+        noStep = noStep+1
     end
-
+    push!(timestamp, A[i,:TIMESTAMP])
     noStep = noStep+1
     stepLength = vcat(stepLength, meanA*t)
     meanA=[0 0 0]
@@ -69,6 +75,27 @@ for i=2:row_number
     meanA=meanA+[A[i,2] A[i,3] A[i,4]]
   end
 end
+
+direction = []
+jd = 1
+for i=1:length(timestamp)
+    if B[jd, :TIMESTAMP] == timestamp[i]
+        push!(direction, sqrt(B[jd,2].^2+B[jd,3].^2+B[jd,4].^2))
+        jd = jd + 1
+    else
+        if B[jd, :TIMESTAMP] < timestamp[i]
+            while B[jd, :TIMESTAMP] < timestamp[i]
+                jd = jd + 1
+            end
+            push!(direction, sqrt(B[jd,2].^2+B[jd,3].^2+B[jd,4].^2))
+        else
+            push!(direction, sqrt(B[jd,2].^2+B[jd,3].^2+B[jd,4].^2))
+        end
+    end
+end
+
+# println(length(direction))
+# println(length(timestamp))
 
 stepPtDF = convert(DataFrame, stepPt)
 stepPtDF[:index] = 1:size(stepPt,1)
@@ -91,6 +118,15 @@ stepPtDF[:index] = 0:size(stepPtDF,1)-1
 todelete = 0 .< stepPtDF[:index]
 stepPtDF = stepPtDF[todelete,:]
 delete!(stepPtDF,:index)
+newTimestamp = []
+for i = 1:length(todelete)
+    if todelete[i]
+        push!(newTimestamp, timestamp[i])
+        push!(angle, direction[i])
+    end
+end
+timestamp = newTimestamp
+
 
 #print(stepPtDF)
 #print("\n")
@@ -148,6 +184,13 @@ siz = size(stepPtDF, 1)/2
 
 stepInt = convert(Int64, siz)
 steps = DataFrame()
+newTimestamp = []
+newAngle = []
+for i = 1:stepInt
+    push!(newTimestamp, timestamp[i*2])
+    push!(newAngle, angle[i*2])
+end
+steps[:timestamp] = newTimestamp
 steps[:step] = 1:stepInt
 #print(stepInt)
 
@@ -162,7 +205,10 @@ evenPt = stepPtDF[:odd] .> 1
 steps[:max] = stepPtDF[oddPt,:][:x2]
 steps[:min] = stepPtDF[evenPt,:][:x2]
 steps[:formula] = sqrt(sqrt(abs(steps[:max] - steps[:min])))
+steps[:angle] = newAngle
 
-print(steps)
+path = DataFrame(ANGLE=steps[:angle], DISTANCE=steps[:formula])
+print(path)
 print("\n")
-writetable("noodle.txt", steps, separator='\t')
+writetable("$folder/output/Steps.txt", steps, separator='\t')
+writetable("$folder/output/path.txt", path, separator=' ')
