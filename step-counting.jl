@@ -3,8 +3,12 @@ using DataFrames
 #threshold could be 1.2-1.5
 #ARGS should be fileName, startpoint, endpoint, rate, threshold
 folder = ARGS[1]
+# startpoint = 1
 startpoint = 1
-endpoint = 2290
+# startpoint = 200
+# endpoint = 2290
+# endpoint = 2290
+endpoint = 669
 rate = 80
 threshold = 1.5
 # println(accel, " ", x[2], " ", x[3]," ", x[4]," ", x[5])
@@ -179,8 +183,8 @@ totalLength=sum(stepLength[1:noStep, 2])
 #writedlm("noodle.txt", stepPt, '\t')
 #print(size(stepPtDF, 1)/2 -0.5)
 
-#siz = size(stepPtDF, 1)/2 -0.5
-siz = size(stepPtDF, 1)/2
+siz = size(stepPtDF, 1)/2 -0.5
+# siz = size(stepPtDF, 1)/2
 
 stepInt = convert(Int64, siz)
 steps = DataFrame()
@@ -194,12 +198,12 @@ steps[:timestamp] = newTimestamp
 steps[:step] = 1:stepInt
 #print(stepInt)
 
-#stepPtDF[:odd] = vcat(repeat([1,2], inner =[1], outer = [stepInt]), 1)
-stepPtDF[:odd] = repeat([1,2], inner =[1], outer = [stepInt])
+stepPtDF[:odd] = vcat(repeat([1,2], inner =[1], outer = [stepInt]), 1)
+# stepPtDF[:odd] = repeat([1,2], inner =[1], outer = [stepInt])
 
-#stepPtDF[size(stepPtDF, 1), :odd] =10
+stepPtDF[size(stepPtDF, 1), :odd] =10
 oddPt = stepPtDF[:odd] .< 2
-#stepPtDF[size(stepPtDF, 1), :odd] =0
+stepPtDF[size(stepPtDF, 1), :odd] =0
 evenPt = stepPtDF[:odd] .> 1
 
 steps[:max] = stepPtDF[oddPt,:][:x2]
