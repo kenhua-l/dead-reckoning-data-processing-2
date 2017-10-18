@@ -1,15 +1,16 @@
 using DataFrames
 
-# file = ARGS[1]
+id = ARGS[1]
 # println(file)
-id = "2017_10_11_14_15_26"
-file = string("dataget/logfile_", id)
+# id = "2017_10_11_14_15_26"
+# file = string("dataget/logfile_", id)
+# file = ARGS[1]
 
-println(isfile("$file.txt"))
+println(isfile("$id.txt"))
 acc_df = DataFrame(TIMESTAMP = Float64[], VALUE0 = Float64[], VALUE1 = Float64[], VALUE2 = Float64[])
 dir_df = DataFrame(TIMESTAMP = Float64[], VALUE0 = Float64[], VALUE1 = Float64[], VALUE2 = Float64[])
 wifi_raw_df = DataFrame(TIMESTAMP = Float64[], SSID = String[], MAC_ID = String[], RSS = Int64[])
-open("$file.txt", "r") do f
+open("$id.txt", "r") do f
     for line in eachline(f)
         if line != ""
             if line[1] != '%'
@@ -29,7 +30,7 @@ open("$file.txt", "r") do f
                     if y_z < 0
                         y_z = y_z * -1
                     elseif y_z < 180
-                        y_z = y_z + 180
+                        y_z = 360 - y_z
                     end
                     # o_mean = sqrt(p_x ^ 2 + r_y ^ 2 + y_z ^ 2)
                     push!(dir_df, [time y_z p_x r_y])
@@ -80,6 +81,3 @@ open("dataget/$id/WiFi.txt", "w") do w
         end
     end
 end
-
-# writetable("dataget/$id/WiFi.txt", acc_df, separator='\t')
-# println(wifi_raw_df)

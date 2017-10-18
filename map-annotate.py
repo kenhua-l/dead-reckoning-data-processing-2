@@ -6,30 +6,44 @@ from PIL import Image
 
 folder = str(sys.argv[1])
 path = []
-start_point = (2100, 1000)
+origin = (370, 1294) # in pixels (y is 1654-360)
+start_point = (63.5, 11.3) # in meters
 # start_point = (2100, 1000)
 # start_point = (700, 1175)
-scale = 15 #1 meter is about 25 pixels
-north = 30.0
+north = 40 # simplistically
+scale = 27 #27 pixels : 1meter
+
+def convert_image_deg(deg):
+    ans = (deg - 180) * -1
+    if ans < 0:
+        ans = ans + 360
+    return ans
+
+def scale_m_to_px((x,y)):
+    real_x = x * scale + origin[0]
+    real_y = origin[1] - y * scale
+    return (real_x, real_y)
 
 def main():
     img=mpimg.imread('map.png')
     fig, ax = plt.subplots()
     ax.imshow(img)
-    # ax.imshow(img, origin='lower')
 
     with open(folder+'/output/path.txt', 'r') as f:
         f.readline()
         for line in f:
             xy = line.split()
-            deg = float(xy[0].split('.')[0][1:]) - north
+            deg = convert_image_deg(float(xy[0].split('.')[0][1:]) - north)
             path.append(tuple((deg, float(xy[1]))))
 
-    x_axis = [start_point[0]]
-    y_axis = [start_point[1]]
+    x_axis, y_axis = scale_m_to_px(start_point)
+    x_axis = [x_axis]
+    y_axis = [y_axis]
+    prev_deg = 0
     for deg, dis in path:
         x_axis.append(x_axis[-1] + scale * (dis) * math.sin(math.radians(deg)))
         y_axis.append(y_axis[-1] + scale * (dis) * math.cos(math.radians(deg)))
+        prev_deg = deg
 
     # wifi_x=[start_point[0]]
     # wifi_y=[start_point[1]]

@@ -1,0 +1,27 @@
+echo NORTH
+julia get_dir.jl orientation/logfile_2017_10_18_17_32_20
+
+julia get_dir.jl orientation/logfile_2017_10_18_17_34_07
+julia get_dir.jl orientation/logfile_2017_10_18_17_34_45
+julia get_dir.jl orientation/logfile_2017_10_18_17_35_10
+
+echo EAST
+julia get_dir.jl orientation/logfile_2017_10_18_17_32_46
+
+julia get_dir.jl orientation/logfile_2017_10_18_17_35_34
+julia get_dir.jl orientation/logfile_2017_10_18_17_35_54
+julia get_dir.jl orientation/logfile_2017_10_18_17_36_16
+
+echo SOUTH
+julia get_dir.jl orientation/logfile_2017_10_18_17_33_05
+
+julia get_dir.jl orientation/logfile_2017_10_18_17_36_38
+julia get_dir.jl orientation/logfile_2017_10_18_17_36_58
+julia get_dir.jl orientation/logfile_2017_10_18_17_37_17
+
+echo WEST
+julia get_dir.jl orientation/logfile_2017_10_18_17_33_21
+
+julia get_dir.jl orientation/logfile_2017_10_18_17_37_38
+julia get_dir.jl orientation/logfile_2017_10_18_17_37_57
+julia get_dir.jl orientation/logfile_2017_10_18_17_38_19
