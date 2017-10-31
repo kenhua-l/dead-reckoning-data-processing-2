@@ -34,6 +34,8 @@ def main():
     for ap in wifi_location_px:
         plt.plot(ap[0], ap[1], 'go')
 
+    # Draw Ground Truth
+    
     plt.show()
 
 main()
