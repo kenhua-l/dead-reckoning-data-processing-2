@@ -94,7 +94,7 @@ if isfile("$folder/WiFi.txt")
     wifi_tags=[]
     wifi=Dict()
     numOfLines=0
-    threshold = -48
+    threshold = -46
 
     open("$folder/WiFi.txt", "r") do f
         for line in eachline(f)
@@ -156,7 +156,9 @@ if isfile("$folder/WiFi.txt")
     for key in collect(keys(wifi_clean))
         push!(wifikey, Symbol(key))
     end
-    p = plot(stack(wifidf,wifikey), x=:TIMESTAMP, y=:value, color=:variable, Geom.line)
-    draw(PNG("$folder/output/Wifi.png", 14inch, 8inch), p)
+    if size(wifidf, 1) > 0
+        p = plot(stack(wifidf,wifikey), x=:TIMESTAMP, y=:value, color=:variable, Geom.line)
+        draw(PNG("$folder/output/Wifi.png", 14inch, 8inch), p)
+    end
     writetable("$folder/output/WiFi.txt", wifidf, quotemark=' ', separator='\t')
 end
