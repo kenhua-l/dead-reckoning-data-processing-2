@@ -5,9 +5,9 @@ import sys
 from PIL import Image
 
 # in meters
-start_point = (63.5, 11.3) # in meters
-# start_point = (2100, 1000)
-# start_point = (700, 1175)
+# start_point = (63.5, 11.3) # in meters
+# start_point = (12.42, 11.83) # in meters
+start_point = (12.42, 4.65) # in meters
 wifi1_location = (0, 19.45)
 wifi2_location = (12.42, 4.65)
 wifi3_location = (25.05, 11.83)
@@ -20,9 +20,9 @@ wifi9_location = (60.57, 20.07)
 
 origin = (370, 1294) # in pixels (y is 1654-360)
 
-# folder = str(sys.argv[1])
+folder = str(sys.argv[1])
 path = []
-north = 40 # simplistically
+north = 20 # simplistically
 scale = 27 #27 pixels : 1meter
 
 zone_of_uncertainty = 3.5 #3.5m radius
@@ -44,23 +44,21 @@ def main():
     fig, ax = plt.subplots()
     ax.imshow(img)
 
-    #
-    #
-    # with open(folder+'/output/path.txt', 'r') as f:
-    #     f.readline()
-    #     for line in f:
-    #         xy = line.split()
-    #         deg = convert_image_deg(float(xy[0].split('.')[0][1:]) - north)
-    #         path.append(tuple((deg, float(xy[1]))))
-    #
-    # x_axis, y_axis = scale_m_to_px(start_point)
-    # x_axis = [x_axis]
-    # y_axis = [y_axis]
-    # prev_deg = 0
-    # for deg, dis in path:
-    #     x_axis.append(x_axis[-1] + scale * (dis) * math.sin(math.radians(deg)))
-    #     y_axis.append(y_axis[-1] + scale * (dis) * math.cos(math.radians(deg)))
-    #     prev_deg = deg
+    with open(folder+'/path.txt', 'r') as f:
+        f.readline()
+        for line in f:
+            xy = line.split()
+            deg = convert_image_deg(float(xy[0]) - north)
+            path.append(tuple((deg, float(xy[1]))))
+
+    x_axis, y_axis = scale_m_to_px(start_point)
+    x_axis = [x_axis]
+    y_axis = [y_axis]
+    prev_deg = 0
+    for deg, dis in path:
+        x_axis.append(x_axis[-1] + scale * (dis) * math.sin(math.radians(deg)))
+        y_axis.append(y_axis[-1] + scale * (dis) * math.cos(math.radians(deg)))
+        prev_deg = deg
     #
     # wifi_x=[x_axis[0]]
     # wifi_y=[y_axis[1]]
@@ -81,8 +79,8 @@ def main():
     #             wifi_y.append(wifi_y[-1] + scale * arg2 * math.cos(math.radians(deg)))
     #
     #
-    # plt.plot(x_axis, y_axis, 'o')
-    # plt.plot(x_axis, y_axis)
+    plt.plot(x_axis, y_axis, 'o')
+    plt.plot(x_axis, y_axis)
     # plt.plot(wifi_x, wifi_y, 'rx')
     # plt.plot(wifi_x, wifi_y)
     # plt.ylabel('y-axis')

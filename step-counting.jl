@@ -3,10 +3,10 @@ using DataFrames
 folder = ARGS[1]
 rate = 90
 K = 0.45
-threshold = 2.2
+threshold = 2.1
 
-A = readtable("$folder/output/Accelerometer.txt", separator='\t')
-B = readtable("$folder/output/Orientation.txt", separator='\t')
+A = readtable("$folder/Accelerometer.txt", separator='\t')
+B = readtable("$folder/Orientation.txt", separator='\t')
 row_number=nrow(A)
 t=1/rate
 noStep=0
@@ -109,8 +109,10 @@ timestamp = newTimestamp
 
 evenAverage = evenTotal / numOfEven
 oddAverage = oddTotal / numOfOdd
+
 #the minimum threshold of peaks
 minOfmax = 100
+
 #the maximum threshold of valleys
 maxOfmin = 0
 
@@ -176,5 +178,5 @@ steps[:formula] = sqrt(sqrt(abs(steps[:max] - steps[:min]))) * K
 steps[:angle] = newAngle
 
 path = DataFrame(ANGLE=steps[:angle], DISTANCE=steps[:formula])
-writetable("$folder/output/Steps.txt", steps, separator='\t')
-writetable("$folder/output/path.txt", path, separator=' ')
+writetable("$folder/steps.txt", steps, quotemark = ' ', separator='\t')
+writetable("$folder/path.txt", path, quotemark = ' ', separator=' ')
