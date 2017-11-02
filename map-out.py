@@ -1,9 +1,13 @@
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import sys
-import pathgenerator
+from pathgenerator import MapObject
 
 folder = str(sys.argv[1])
+
+wifi_location_px = [(346.507, 767.985), (702.367, 1167.342), (1043.458, 973.482),
+                    (1590.748, 949.182), (1750.048, 734.64), (1744.081, 894.156),
+                    (1870.63, 934.413), (2003.146, 885.921), (2002.579, 751.056)]
 
 def main():
     # set up IDMI lab layout
@@ -12,7 +16,7 @@ def main():
     ax.imshow(img)
 
     # Draw the origin point
-    map_image = pathgenerator.MapObject(folder)
+    map_image = MapObject(folder)
     map_image.plot_important_points(plt)
 
     # Draw the APs
@@ -25,7 +29,13 @@ def main():
     # Draw DR
     map_image.plot_dr(plt)
 
-    plt.show()
-    # pathgenerator.PathGen()
+    # Draw map-correction
+    map_image.plot_map(plt)
+
+    # # map_image.check_map(plt)
+    # plt.show()
+    # # pathgenerator.PathGen()
+    # fig.savefig(folder+'/path.png', dpi=fig.dpi)
+
 
 main()
