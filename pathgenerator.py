@@ -30,7 +30,9 @@ def convert_image_deg(deg):
     return ans
 
 def convert_quantize_to_px(axis, value):
-    if axis=="x":
+    if axis == "xy":
+        return (value[0] * 3 + ORIGIN[0], ORIGIN[1] - 615 + value[1] * 3)
+    elif axis=="x":
         return value * 3 + ORIGIN[0]
     else:
         return ORIGIN[1] - 615 + value * 3
@@ -50,12 +52,12 @@ def quantize_pixel(coord):
     return (new_x, new_y)
 
 class PathGen(object):
-    def __init__(self, folder):
+    def __init__(self, folder, obs_map):
         self.folder = folder # all data needed
         self.path_reference = self.get_path_reference() # all the calculated step value from Julia - tuple of degree and distance
         self.start_point, self.ground_path = self.get_ground_truth() # start point in m, true path step value - tuple of (x,y) in m
         self.dr_path = self.get_dr() # dead-reckoning path step value as of Julia calculated
-
+        self.dr_map_path = self.get_map_match_path(obs_map)
         self.wifi = []
         self.corrected_path = []
         # print self.wifi
@@ -105,8 +107,20 @@ class PathGen(object):
         return dr_path
 
     #returns the map-matching path in px - array of tuple of (x,y) for each step
-    def get_map_match_path(self):
-        
+    def get_map_match_path(self, obs_map):
+        # get path in m
+        (angle, length) = self.path_reference[0]
+        x = self.start_point[0] + length * math.sin(math.radians(angle))
+        y = self.start_point[1] + length * math.cos(math.radians(angle))
+        first_step = (x, y)
+        mapped_dr_path = [convert_m_to_px(self.start_point), convert_m_to_px(first_step)]
+
+        for i in range(1, len(self.dr_path) - 1):
+            step_matrix = StepMatrix(quantize_pixel(mapped_dr_path[i]), self.path_reference[i], quantize_pixel(mapped_dr_path[i-1]), obs_map)
+            map_step = convert_quantize_to_px("xy", step_matrix.next_step_matched)
+            mapped_dr_path.append(map_step)
+        return mapped_dr_path
+
 
     def draw_wifi_correction(self):
         pass
@@ -117,8 +131,8 @@ class MapObject(object):
         self.map_size = (1770, 615) # in pixels 1770 wide, 615 tall
         self.map_size_in_m = (65.5, 22.8) # in meters
         self.map_array_2d_obs = [[0 for x in range(590)] for y in range(205)] # quantized block - 3 x 3pixels per block
-        self.path = PathGen(folder)
         self.quantize_obs_block()
+        self.path = PathGen(folder, self.map_array_2d_obs)
 
     def plot_important_points(self, plt):
         plt.plot(ORIGIN[0], ORIGIN[1], 'r^')
@@ -132,54 +146,60 @@ class MapObject(object):
         (x_dr, y_dr) = separate_tuple(self.path.dr_path)
         plt.plot(x_dr, y_dr, 'ro')
 
+    def plot_map_matching(self, plt):
+        print("plotting?")
+        (x_map, y_map) = separate_tuple(self.path.dr_map_path)
+        plt.plot(x_map, y_map, 'ys')
+
     # These two are binary checks
-    def inconsistent(self, coords, map_array):
-        inconsistent_coords_index = []
-        print coords
-        for i,coord in enumerate(coords):
-            if map_array[coord[1]][coord[0]] == 1:
-                inconsistent_coords_index.append(i)
-        return inconsistent_coords_index
-
-    def inconsistent_point(self, coord, map_array):
-        return map_array[coord[1]][coord[0]] == 1
-
-    def plot_map(self, plt):
-        dr_steps = self.path.dr_path
-        dr_missteps = []
-        quantized_dr_steps = map(lambda x: quantize_pixel(x), dr_steps)
-        for i, step in enumerate(quantized_dr_steps):
-            self.path.corrected_path.append(step)
-            if self.inconsistent_point(step, self.map_array_2d_obs):
-                #correction
-                dr_missteps.append((step, i))
-                # print step
-
-        x_axis_right = []
-        y_axis_right = []
-        x_axis = []
-        y_axis = []
-
-        step1 = dr_missteps[0][0]
-        refer = self.path.path_reference[dr_missteps[0][1]]
-        prev_step = quantize_pixel(dr_steps[dr_missteps[0][1]-1])
-        next_step = quantize_pixel(dr_steps[dr_missteps[0][1]+1])
-        # print step1, prev_step, next_step
-        stepobj = StepMatrix(step1, refer, prev_step, self.map_array_2d_obs)
-        for i in range(step1[0]-10, step1[0]+10):
-            for j in range(step1[1]-10, step1[1]+10):
-                x_axis.append(convert_quantize_to_px('x', i))
-                y_axis.append(convert_quantize_to_px('y', j))
-        # print dr_steps
-        # dr_missteps = self.inconsistent(quantize_pixels(dr_steps), self.map_array_2d_obs)
-        for c in self.path.corrected_path:
-            x_axis_right.append(c[0]  * 3 + ORIGIN[0])
-            y_axis_right.append(ORIGIN[1] - self.map_size[1] + c[1] * 3)
-        # for t in dr_missteps:
-            # x_axis.append(t[0] * 3 + ORIGIN[0])
-            # y_axis.append(ORIGIN[1] - self.map_size[1] + t[1] * 3)
-        plt.plot(x_axis, y_axis, 'gs')
-        plt.plot(x_axis_right, y_axis_right, 'yx')
+    # def inconsistent(self, coords, map_array):
+    #     inconsistent_coords_index = []
+    #     print coords
+    #     for i,coord in enumerate(coords):
+    #         if map_array[coord[1]][coord[0]] == 1:
+    #             inconsistent_coords_index.append(i)
+    #     return inconsistent_coords_index
+    #
+    # def inconsistent_point(self, coord, map_array):
+    #     return map_array[coord[1]][coord[0]] == 1
+    #
+    # def plot_map(self, plt):
+    #     dr_steps = self.path.dr_path
+    #     dr_missteps = []
+    #     quantized_dr_steps = map(lambda x: quantize_pixel(x), dr_steps)
+    #     for i, step in enumerate(quantized_dr_steps):
+    #         self.path.corrected_path.append(step)
+    #         if self.inconsistent_point(step, self.map_array_2d_obs):
+    #             #correction
+    #             dr_missteps.append((step, i))
+    #             # print step
+    #
+    #     x_axis_right = []
+    #     y_axis_right = []
+    #     x_axis = []
+    #     y_axis = []
+    #
+    #     step1 = dr_missteps[0][0]
+    #     refer = self.path.path_reference[dr_missteps[0][1]]
+    #     prev_step = quantize_pixel(dr_steps[dr_missteps[0][1]-1])
+    #     next_step = quantize_pixel(dr_steps[dr_missteps[0][1]+1])
+    #     # print step1, prev_step, next_step
+    #     stepobj = StepMatrix(step1, refer, prev_step, self.map_array_2d_obs)
+    #     print stepobj.get_next_direction()
+    #     for i in range(step1[0]-10, step1[0]+10):
+    #         for j in range(step1[1]-10, step1[1]+10):
+    #             x_axis.append(convert_quantize_to_px('x', i))
+    #             y_axis.append(convert_quantize_to_px('y', j))
+    #     # print dr_steps
+    #     # dr_missteps = self.inconsistent(quantize_pixels(dr_steps), self.map_array_2d_obs)
+    #     for c in self.path.corrected_path:
+    #         x_axis_right.append(c[0]  * 3 + ORIGIN[0])
+    #         y_axis_right.append(ORIGIN[1] - self.map_size[1] + c[1] * 3)
+    #     # for t in dr_missteps:
+    #         # x_axis.append(t[0] * 3 + ORIGIN[0])
+    #         # y_axis.append(ORIGIN[1] - self.map_size[1] + t[1] * 3)
+    #     plt.plot(x_axis, y_axis, 'gs')
+    #     plt.plot(x_axis_right, y_axis_right, 'yx')
 
     def check_map(self, plt): # don't use unless needed because takes time to draw
         # x_points = range(ORIGIN[0] + (3 * (0+1) - 1), ORIGIN[0] + (3 * (388+1) - 1))

@@ -1,3 +1,4 @@
+import math
 
 def discretize_direction(angle):
     direction = 0
@@ -20,23 +21,50 @@ def discretize_direction(angle):
 
     return direction
 
+def map_direction_angle(direction):
+    angle = 0
+    if direction == 1:
+        angle = 45
+    elif direction == 2:
+        angle = 90
+    elif direction == 3:
+        angle = 135
+    elif direction == 4:
+        angle = 180
+    elif direction == 5:
+        angle = 225
+    elif direction == 6:
+        angle = 270
+    elif direction == 7:
+        angle = 315
+    else:
+        angle = 0
+    return angle
+
 # pseudo algorithm for all the map matching method
 class StepMatrix(object): # a 21 x 21 matrix
     def __init__(self, curr_step, refer, prev_step, obs_map):
-        self.step_matrix = self.setup_matrix(curr_step, prev_step, obs_map)
+        self.step = curr_step
+        self.step_matrix = self.setup_matrix(prev_step, obs_map)
         # 8 degrees of freedom - N, NE, E, SE, S, SW, W, NW
         self.dof = self.direction_probability_given_next(refer)
+        self.print_matrix()
+        self.next_step_matched = self.get_next_step(refer)
+        # self.print_matrix()
 
     # a matrix of probability (0 is not possible - 1 is highly probable)
     # assumes user does not go back to previous step
-    def setup_matrix(self, step, prev_step, obs_map):
+    def setup_matrix(self, prev_step, obs_map):
         step_matrix = [[0 for x in range(21)] for y in range(21)]
         # absolute obstacle is 0
         for i in range(21): # row
             for j in range(21): # col
-                step_matrix[i][j] = abs(obs_map[step[1]-10+i][step[0]-10+j] - 1.0)
+                # if self.step[1]-10+i < 0 or self.step[1]-10+i >= 205 or self.step[0]-10+j < 0 or self.step[0]-10+j >= 590:
+                    # step_matrix[i][j] = 0.0
+                # else:
+                step_matrix[i][j] = abs(obs_map[self.step[1]-10+i][self.step[0]-10+j] - 1.0)
 
-        step_matrix[10 + prev_step[1] - step[1]][10 + prev_step[0] - step[0]] = 0.0
+        step_matrix[10 + prev_step[1] - self.step[1]][10 + prev_step[0] - self.step[0]] = 0.0
         # step_matrix[10 + next_step[1] - step[1]][10 + next_step[0] - step[0]] = 0.9
         # soft gaussian the probability
         for i in range(21):
@@ -122,8 +150,21 @@ class StepMatrix(object): # a 21 x 21 matrix
             direction_average[i]  = direction_average[i] * direction_likelihood[i]
         return direction_average
 
-    def get_next_direction(self):
-        return max(range(len(self.dof)), key=lambda x: self.dof[x])
+    def get_next_direction(self, given_angle):
+        map_matching_direction = max(range(len(self.dof)), key=lambda x: self.dof[x])
+        # dr_direction = discretize_direction(given_angle)
+        # if map_matching_direction == dr_direction:
+            # return given_angle
+        # else:
+        return map_direction_angle(map_matching_direction)
+
+    def get_next_step(self, refer):
+        angle = self.get_next_direction(refer[1])
+        print angle, self.step, refer[1]
+        x = self.step[0] + 9 * refer[1] * math.sin(math.radians(angle))
+        y = self.step[1] + 9 * refer[1] * math.cos(math.radians(angle))
+        # print (x, y)
+        return (x,y)
 
     def print_matrix(self):
         for row in self.step_matrix:

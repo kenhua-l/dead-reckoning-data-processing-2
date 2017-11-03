@@ -30,10 +30,11 @@ def main():
     map_image.plot_dr(plt)
 
     # Draw map-correction
-    map_image.plot_map(plt)
+    map_image.plot_map_matching(plt)
+    # map_image.plot_map(plt)
 
     # # map_image.check_map(plt)
-    # plt.show()
+    plt.show()
     # # pathgenerator.PathGen()
     # fig.savefig(folder+'/path.png', dpi=fig.dpi)
 
