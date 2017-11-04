@@ -1,44 +1,59 @@
 import math
 
+ORIGIN = (367, 1293) # in pixels (y is 1654-359)
+
+# converts m to px to draw on map - returns two values, not tuple
+def convert_m_to_px((x,y)):
+    real_x = x * SCALE + ORIGIN[0]
+    real_y = ORIGIN[1] - y * SCALE
+    return real_x, real_y
+
+# represent a quantized block
+def quantize_pixel(coord):
+    new_x = int((coord[0] - ORIGIN[0]) / 3)
+    new_y = int((coord[1] - ORIGIN[1] + 615) / 3)
+    return (new_x, new_y)
+
+# comp vision coord system
 def discretize_direction(angle):
-    direction = 0
+    direction = 4
     if angle > 22 and angle < 67:
-        direction = 1
+        direction = 3
     elif angle > 68 and angle < 112:
         direction = 2
     elif angle > 113 and angle < 157:
-        direction = 3
+        direction = 1
     elif angle > 158 and angle < 202:
-        direction = 4
+        direction = 0
     elif angle > 203 and angle < 247:
-        direction = 5
+        direction = 7
     elif angle > 248 and angle < 292:
         direction = 6
     elif angle > 293 and angle < 337:
-        direction = 7
+        direction = 5
     else:
-        direction = 0
-
+        direction = 4
     return direction
 
+# comp vision coord system
 def map_direction_angle(direction):
-    angle = 0
+    angle = 180
     if direction == 1:
-        angle = 45
+        angle = 135
     elif direction == 2:
         angle = 90
     elif direction == 3:
-        angle = 135
+        angle = 45
     elif direction == 4:
-        angle = 180
+        angle = 0
     elif direction == 5:
-        angle = 225
+        angle = 315
     elif direction == 6:
         angle = 270
     elif direction == 7:
-        angle = 315
+        angle = 225
     else:
-        angle = 0
+        angle = 180
     return angle
 
 # pseudo algorithm for all the map matching method
@@ -48,7 +63,7 @@ class StepMatrix(object): # a 21 x 21 matrix
         self.step_matrix = self.setup_matrix(prev_step, obs_map)
         # 8 degrees of freedom - N, NE, E, SE, S, SW, W, NW
         self.dof = self.direction_probability_given_next(refer)
-        self.print_matrix()
+        # self.print_matrix()
         self.next_step_matched = self.get_next_step(refer)
         # self.print_matrix()
 
@@ -152,15 +167,15 @@ class StepMatrix(object): # a 21 x 21 matrix
 
     def get_next_direction(self, given_angle):
         map_matching_direction = max(range(len(self.dof)), key=lambda x: self.dof[x])
-        # dr_direction = discretize_direction(given_angle)
-        # if map_matching_direction == dr_direction:
-            # return given_angle
-        # else:
-        return map_direction_angle(map_matching_direction)
+        dr_direction = discretize_direction(given_angle)
+        if map_matching_direction == dr_direction:
+            return given_angle
+        else:
+            return map_direction_angle(map_matching_direction)
 
     def get_next_step(self, refer):
-        angle = self.get_next_direction(refer[1])
-        print angle, self.step, refer[1]
+        angle = self.get_next_direction(refer[0])
+        # print angle
         x = self.step[0] + 9 * refer[1] * math.sin(math.radians(angle))
         y = self.step[1] + 9 * refer[1] * math.cos(math.radians(angle))
         # print (x, y)

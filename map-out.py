@@ -31,9 +31,10 @@ def main():
 
     # Draw map-correction
     map_image.plot_map_matching(plt)
-    # map_image.plot_map(plt)
 
-    # # map_image.check_map(plt)
+    # Draw wifi_correction
+    map_image.plot_wifi_correction(plt)
+    
     plt.show()
     # # pathgenerator.PathGen()
     # fig.savefig(folder+'/path.png', dpi=fig.dpi)

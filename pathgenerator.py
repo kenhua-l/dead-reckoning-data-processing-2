@@ -1,9 +1,10 @@
 import math
 from StepMatrix import StepMatrix
+from WifiArea import WifiArea
 
 #CONSTANT
 SCALE = 27 # 1 meter is 27 pixels
-NORTH = 20 # north of map is 30 degree
+NORTH = 25 # north of map is 30 degree
 AVERAGE_STEP = 3 # quantized blocks away
 ORIGIN = (367, 1293) # in pixels (y is 1654-359)
 MAP_SIZE = (1770, 615) # in pixels - (590, 205) in quantized, and (65.56, 22.78) in meters
@@ -31,11 +32,11 @@ def convert_image_deg(deg):
 
 def convert_quantize_to_px(axis, value):
     if axis == "xy":
-        return (value[0] * 3 + ORIGIN[0], ORIGIN[1] - 615 + value[1] * 3)
+        return (value[0] * 3 + ORIGIN[0] +1, ORIGIN[1] - 614 + value[1] * 3)
     elif axis=="x":
-        return value * 3 + ORIGIN[0]
+        return value * 3 + ORIGIN[0] - 1
     else:
-        return ORIGIN[1] - 615 + value * 3
+        return ORIGIN[1] - 614 + value * 3
 
 def separate_tuple(array_of_tuple):
     arr_x = []
@@ -58,8 +59,7 @@ class PathGen(object):
         self.start_point, self.ground_path = self.get_ground_truth() # start point in m, true path step value - tuple of (x,y) in m
         self.dr_path = self.get_dr() # dead-reckoning path step value as of Julia calculated
         self.dr_map_path = self.get_map_match_path(obs_map)
-        self.wifi = []
-        self.corrected_path = []
+        self.wifi_path = self.get_wifi_correction()
         # print self.wifi
         print("Paths for 3 methods generated")
 
@@ -113,18 +113,23 @@ class PathGen(object):
         x = self.start_point[0] + length * math.sin(math.radians(angle))
         y = self.start_point[1] + length * math.cos(math.radians(angle))
         first_step = (x, y)
+        mapper_dr_in_m = [self.start_point, first_step]
+        #in px
         mapped_dr_path = [convert_m_to_px(self.start_point), convert_m_to_px(first_step)]
 
         for i in range(1, len(self.dr_path) - 1):
-            step_matrix = StepMatrix(quantize_pixel(mapped_dr_path[i]), self.path_reference[i], quantize_pixel(mapped_dr_path[i-1]), obs_map)
-            map_step = convert_quantize_to_px("xy", step_matrix.next_step_matched)
-            mapped_dr_path.append(map_step)
+            step_matrix = StepMatrix(quantize_pixel(mapped_dr_path[-1]), self.path_reference[i], quantize_pixel(mapped_dr_path[-2]), obs_map)
+            map_next_step = convert_quantize_to_px("xy", step_matrix.next_step_matched)
+            mapped_dr_path.append(map_next_step)
         return mapped_dr_path
 
 
-    def draw_wifi_correction(self):
-        pass
+    def get_wifi_correction(self):
+        wifi_path = self.dr_map_path
+        wifi_object = WifiArea()
+        wifi_object.set_wifi_bands(self.folder+'/Wifi.txt')
 
+        return wifi_path
 
 class MapObject(object):
     def __init__(self, folder):
@@ -135,71 +140,29 @@ class MapObject(object):
         self.path = PathGen(folder, self.map_array_2d_obs)
 
     def plot_important_points(self, plt):
+        print self.path.start_point
         plt.plot(ORIGIN[0], ORIGIN[1], 'r^')
         plt.plot(ORIGIN[0]+self.map_size[0], ORIGIN[1]-self.map_size[1], 'r^')
 
     def plot_ground_truth(self, plt):
+        print self.path.ground_path[0]
         (x_truth, y_truth) = separate_tuple(self.path.ground_path)
         plt.plot(x_truth, y_truth, 'bx')
 
     def plot_dr(self, plt):
+        print self.path.dr_path[0]
         (x_dr, y_dr) = separate_tuple(self.path.dr_path)
         plt.plot(x_dr, y_dr, 'ro')
 
     def plot_map_matching(self, plt):
-        print("plotting?")
+        print self.path.dr_map_path[0]
         (x_map, y_map) = separate_tuple(self.path.dr_map_path)
         plt.plot(x_map, y_map, 'ys')
 
-    # These two are binary checks
-    # def inconsistent(self, coords, map_array):
-    #     inconsistent_coords_index = []
-    #     print coords
-    #     for i,coord in enumerate(coords):
-    #         if map_array[coord[1]][coord[0]] == 1:
-    #             inconsistent_coords_index.append(i)
-    #     return inconsistent_coords_index
-    #
-    # def inconsistent_point(self, coord, map_array):
-    #     return map_array[coord[1]][coord[0]] == 1
-    #
-    # def plot_map(self, plt):
-    #     dr_steps = self.path.dr_path
-    #     dr_missteps = []
-    #     quantized_dr_steps = map(lambda x: quantize_pixel(x), dr_steps)
-    #     for i, step in enumerate(quantized_dr_steps):
-    #         self.path.corrected_path.append(step)
-    #         if self.inconsistent_point(step, self.map_array_2d_obs):
-    #             #correction
-    #             dr_missteps.append((step, i))
-    #             # print step
-    #
-    #     x_axis_right = []
-    #     y_axis_right = []
-    #     x_axis = []
-    #     y_axis = []
-    #
-    #     step1 = dr_missteps[0][0]
-    #     refer = self.path.path_reference[dr_missteps[0][1]]
-    #     prev_step = quantize_pixel(dr_steps[dr_missteps[0][1]-1])
-    #     next_step = quantize_pixel(dr_steps[dr_missteps[0][1]+1])
-    #     # print step1, prev_step, next_step
-    #     stepobj = StepMatrix(step1, refer, prev_step, self.map_array_2d_obs)
-    #     print stepobj.get_next_direction()
-    #     for i in range(step1[0]-10, step1[0]+10):
-    #         for j in range(step1[1]-10, step1[1]+10):
-    #             x_axis.append(convert_quantize_to_px('x', i))
-    #             y_axis.append(convert_quantize_to_px('y', j))
-    #     # print dr_steps
-    #     # dr_missteps = self.inconsistent(quantize_pixels(dr_steps), self.map_array_2d_obs)
-    #     for c in self.path.corrected_path:
-    #         x_axis_right.append(c[0]  * 3 + ORIGIN[0])
-    #         y_axis_right.append(ORIGIN[1] - self.map_size[1] + c[1] * 3)
-    #     # for t in dr_missteps:
-    #         # x_axis.append(t[0] * 3 + ORIGIN[0])
-    #         # y_axis.append(ORIGIN[1] - self.map_size[1] + t[1] * 3)
-    #     plt.plot(x_axis, y_axis, 'gs')
-    #     plt.plot(x_axis_right, y_axis_right, 'yx')
+    def plot_wifi_correction(self, plt):
+        (x_wifi, y_wifi) = separate_tuple(self.path.wifi_path)
+        plt.plot(x_wifi, y_wifi, 'gx')
+
 
     def check_map(self, plt): # don't use unless needed because takes time to draw
         # x_points = range(ORIGIN[0] + (3 * (0+1) - 1), ORIGIN[0] + (3 * (388+1) - 1))
@@ -221,15 +184,21 @@ class MapObject(object):
     def quantize_obs_block(self):
         # set up obstacles based on map
         # use block (3 x 3 pixels equal one quantize block)
-        for i in range(92):
-            for j in range(388):
+        for i in range(95):
+            for j in range(391):
                 self.map_array_2d_obs[i][j] = 1
-        for i in range(109, 205):
-            for j in range(0, 34):
+        for i in range(52, 95):
+            for j in range(425, 490):
                 self.map_array_2d_obs[i][j] = 1
-        for i in range(171, 205):
+        for i in range(108, 205):
+            for j in range(35):
+                self.map_array_2d_obs[i][j] = 1
+        for i in range(170, 205):
             for j in range(34, 164):
                 self.map_array_2d_obs[i][j] = 1
-        for i in range(109, 205):
-            for j in range(164, 590):
+        for i in range(108, 205):
+            for j in range(163, 590):
+                self.map_array_2d_obs[i][j] = 1
+        for i in range(108, 155):
+            for j in range(55, 147):
                 self.map_array_2d_obs[i][j] = 1
