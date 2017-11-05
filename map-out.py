@@ -27,6 +27,9 @@ def main():
     # Draw wifi_correction
     map_image.plot_wifi_correction(plt)
 
+    # Draw hybrid_correction
+    map_image.plot_hybrid_correction(plt)
+
     plt.show()
     # # pathgenerator.PathGen()
     # fig.savefig(folder+'/path.png', dpi=fig.dpi)

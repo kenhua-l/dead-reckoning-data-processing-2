@@ -9,14 +9,6 @@ AVERAGE_STEP = 3 # quantized blocks away
 ORIGIN = (367, 1293) # in pixels (y is 1654-359)
 MAP_SIZE = (1770, 615) # in pixels - (590, 205) in quantized, and (65.56, 22.78) in meters
 
-wifi_location_m = [(-0.759, 19.445), (12.421, 4.654), (25.054, 11.834),
-                   (45.324, 12.734), (51.224, 20.68), (51.003, 14.772),
-                   (55.69, 13.281), (60.598, 15.077), (60.577, 20.072)]
-
-wifi_location_px = [(346.507, 767.985), (702.367, 1167.342), (1043.458, 973.482),
-                    (1590.748, 949.182), (1750.048, 734.64), (1744.081, 894.156),
-                    (1870.63, 934.413), (2003.146, 885.921), (2002.579, 751.056)]
-
 # converts m to px to draw on map - returns two values, not tuple
 def convert_m_to_px((x,y)):
     real_x = x * SCALE + ORIGIN[0]
@@ -58,9 +50,19 @@ class PathGen(object):
         self.path_reference = self.get_path_reference() # all the calculated step value from Julia - tuple of degree and distance
         self.start_point, self.ground_path = self.get_ground_truth() # start point in m, true path step value - tuple of (x,y) in m
         self.dr_path = self.get_dr() # dead-reckoning path step value as of Julia calculated
+
+        # for hybrid correction
+        self.hybrid_path_distance = []
+
+        # technique map_match
         self.dr_map_path = self.get_map_match_path(obs_map)
+
+        # technique wifi_correct
         self.wifi_path = self.get_wifi_correction()
-        # print self.wifi
+
+        # technique hybrid_correc
+        self.hybrid_path = self.get_hybrid_correction(obs_map)
+
         print("Paths for 3 methods generated")
 
     # returns array of tuple of (angle, distance) of each step
@@ -121,15 +123,30 @@ class PathGen(object):
             step_matrix = StepMatrix(quantize_pixel(mapped_dr_path[-1]), self.path_reference[i], quantize_pixel(mapped_dr_path[-2]), obs_map)
             map_next_step = convert_quantize_to_px("xy", step_matrix.next_step_matched)
             mapped_dr_path.append(map_next_step)
+            # self.hybrid_path_angle.append(step_matrix.angle)
         return mapped_dr_path
 
-
     def get_wifi_correction(self):
-        wifi_path = self.dr_map_path
         wifi_object = WifiArea(self.folder, self.wifi)
-        wifi_path = [wifi_path[x] for x in wifi_object.get_ap()]
-        # wifi_path =
+        wifi_path = wifi_object.evaluate_error_steps(self.start_point, self.path_reference)
+        self.hybrid_path_distance = wifi_object.stride_length
         return wifi_path
+
+    def get_hybrid_correction(self, obs_map):
+        angle = self.path_reference[0][0]
+        length = self.hybrid_path_distance[0]
+        x = self.start_point[0] + length * math.sin(math.radians(angle))
+        y = self.start_point[1] + length * math.cos(math.radians(angle))
+        first_step = (x, y)
+        #in px
+        hybrid_path = [convert_m_to_px(self.start_point), convert_m_to_px(first_step)]
+
+        for i in range(1, len(self.dr_path) - 1):
+            refer = (self.path_reference[i][0], self.hybrid_path_distance[i])
+            step_matrix = StepMatrix(quantize_pixel(hybrid_path[-1]), refer, quantize_pixel(hybrid_path[-2]), obs_map)
+            map_next_step = convert_quantize_to_px("xy", step_matrix.next_step_matched)
+            hybrid_path.append(map_next_step)
+        return hybrid_path
 
 class MapObject(object):
     def __init__(self, folder):
@@ -165,6 +182,9 @@ class MapObject(object):
         (x_wifi, y_wifi) = separate_tuple(self.path.wifi_path)
         plt.plot(x_wifi, y_wifi, 'gx')
 
+    def plot_hybrid_correction(self, plt):
+        (x_hybrid, y_hybrid) = separate_tuple(self.path.hybrid_path)
+        plt.plot(x_hybrid, y_hybrid, 'r^')
 
     def check_map(self, plt): # don't use unless needed because takes time to draw
         # x_points = range(ORIGIN[0] + (3 * (0+1) - 1), ORIGIN[0] + (3 * (388+1) - 1))

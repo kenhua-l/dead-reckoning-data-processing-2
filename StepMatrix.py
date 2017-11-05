@@ -63,9 +63,7 @@ class StepMatrix(object): # a 21 x 21 matrix
         self.step_matrix = self.setup_matrix(prev_step, obs_map)
         # 8 degrees of freedom - N, NE, E, SE, S, SW, W, NW
         self.dof = self.direction_probability_given_next(refer)
-        # self.print_matrix()
-        self.next_step_matched = self.get_next_step(refer)
-        # self.print_matrix()
+        self.angle, self.next_step_matched = self.get_next_step(refer)
 
     # a matrix of probability (0 is not possible - 1 is highly probable)
     # assumes user does not go back to previous step
@@ -74,9 +72,6 @@ class StepMatrix(object): # a 21 x 21 matrix
         # absolute obstacle is 0
         for i in range(21): # row
             for j in range(21): # col
-                # if self.step[1]-10+i < 0 or self.step[1]-10+i >= 205 or self.step[0]-10+j < 0 or self.step[0]-10+j >= 590:
-                    # step_matrix[i][j] = 0.0
-                # else:
                 step_matrix[i][j] = abs(obs_map[self.step[1]-10+i][self.step[0]-10+j] - 1.0)
 
         step_matrix[10 + prev_step[1] - self.step[1]][10 + prev_step[0] - self.step[0]] = 0.0
@@ -175,11 +170,9 @@ class StepMatrix(object): # a 21 x 21 matrix
 
     def get_next_step(self, refer):
         angle = self.get_next_direction(refer[0])
-        # print angle
         x = self.step[0] + 9 * refer[1] * math.sin(math.radians(angle))
         y = self.step[1] + 9 * refer[1] * math.cos(math.radians(angle))
-        # print (x, y)
-        return (x,y)
+        return angle, (x,y)
 
     def print_matrix(self):
         for row in self.step_matrix:
