@@ -7,5 +7,6 @@ do
   # julia datacheck.jl dataget/K/logfile_2017_10_18_$i 0
   # julia step-counting.jl dataget/K/logfile_2017_10_18_$i
   # python map-annotate.py dataget/K/logfile_2017_10_18_$i
+  # julia dead-reckoning.jl test/[accept]logfile_2017_$i
   python map-out.py test/[accept]logfile_2017_$i
 done

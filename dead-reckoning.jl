@@ -7,7 +7,7 @@ fileId = ARGS[1]
 println("$fileId.txt exists is ", string(isfile("$fileId.txt")))
 
 # Constant Parameters
-RSS_THRESHOLD = -50
+RSS_THRESHOLD = -47
 start = ""
 time_format = Dates.DateFormat("H:M:S.s")
 

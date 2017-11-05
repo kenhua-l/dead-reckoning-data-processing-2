@@ -83,7 +83,7 @@ class PathGen(object):
             start_point = tuple(map(lambda x: float(x), f.readline().split()[1:]))
             ground_path.append(convert_m_to_px(start_point))
             start_path_x, start_path_y = ground_path[0]
-            # self.wifi = f.readline().split()[1].split(',')
+            self.wifi = map(lambda x: int(x), f.readline().split()[1:])
             for line in f:
                 lines = line.split()
                 number_of_steps = int(lines[0])
@@ -126,9 +126,9 @@ class PathGen(object):
 
     def get_wifi_correction(self):
         wifi_path = self.dr_map_path
-        wifi_object = WifiArea()
-        wifi_object.set_wifi_bands(self.folder+'/Wifi.txt')
-
+        wifi_object = WifiArea(self.folder, self.wifi)
+        wifi_path = [wifi_path[x] for x in wifi_object.get_ap()]
+        # wifi_path =
         return wifi_path
 
 class MapObject(object):
@@ -143,6 +143,8 @@ class MapObject(object):
         print self.path.start_point
         plt.plot(ORIGIN[0], ORIGIN[1], 'r^')
         plt.plot(ORIGIN[0]+self.map_size[0], ORIGIN[1]-self.map_size[1], 'r^')
+
+        plt.plot()
 
     def plot_ground_truth(self, plt):
         print self.path.ground_path[0]
