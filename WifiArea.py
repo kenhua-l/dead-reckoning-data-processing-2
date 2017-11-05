@@ -160,22 +160,31 @@ class WifiArea(object): # a 21 x 21 matrix
                 wifi_position = wifi_location_m[wifi_focus-1]
                 wifi_mid, wifi_step_range = get_mid_and_edge(self.steps_in_range[wifi_focus])
                 allowed_range = abs(wifi_mid - i) * self.ave_step + self.ave_step # for tolerance
+                allowed_range = (min(0, abs(allowed_range - 2 * self.ave_step)), allowed_range)
                 wifi_dr_step_distance = math.sqrt(pow(pred_next_step[0] - wifi_position[0],2) + pow(pred_next_step[1] - wifi_position[1],2))
-                if wifi_dr_step_distance > allowed_range:
+                if wifi_dr_step_distance > allowed_range[0] and wifi_dr_step_distance < allowed_range[1]:
+                    self.stride_length.append(length)
+                    wifi_steps.append(pred_next_step)
+                else:
                     wifi_next_x, wifi_next_y = 0, 0
-                    if i <= wifi_mid:   # too slow
-                        wifi_next_x = wifi_steps[-1][0] + (self.ave_step + 0.15) * math.sin(math.radians(angle))
-                        wifi_next_y = wifi_steps[-1][1] + (self.ave_step + 0.15) * math.cos(math.radians(angle))
+                    if i <= wifi_mid and wifi_dr_step_distance > allowed_range[1]:   # too slow
+                        wifi_next_x = wifi_steps[-1][0] + (self.max_step) * math.sin(math.radians(angle))
+                        wifi_next_y = wifi_steps[-1][1] + (self.max_step) * math.cos(math.radians(angle))
                         self.stride_length.append(self.max_step)
-                    elif i > wifi_mid:
-                        wifi_next_x = wifi_steps[-1][0] + (self.ave_step - 0.15) * math.sin(math.radians(angle))
-                        wifi_next_y = wifi_steps[-1][1] + (self.ave_step - 0.15) * math.cos(math.radians(angle))
+                    elif i <= wifi_mid and wifi_dr_step_distance < allowed_range[1]:
+                        wifi_next_x = wifi_steps[-1][0] + (self.min_step) * math.sin(math.radians(angle))
+                        wifi_next_y = wifi_steps[-1][1] + (self.min_step) * math.cos(math.radians(angle))
+                        self.stride_length.append(self.min_step)
+                    elif i > wifi_mid and wifi_dr_step_distance < allowed_range[1]:
+                        wifi_next_x = wifi_steps[-1][0] + (self.max_step) * math.sin(math.radians(angle))
+                        wifi_next_y = wifi_steps[-1][1] + (self.max_step) * math.cos(math.radians(angle))
+                        self.stride_length.append(self.max_step)
+                    else:
+                        wifi_next_x = wifi_steps[-1][0] + (self.min_step) * math.sin(math.radians(angle))
+                        wifi_next_y = wifi_steps[-1][1] + (self.min_step) * math.cos(math.radians(angle))
                         self.stride_length.append(self.min_step)
                     wifi_next_step = (wifi_next_x, wifi_next_y)
                     wifi_steps.append(wifi_next_step)
-                else:
-                    self.stride_length.append(length)
-                    wifi_steps.append(pred_next_step)
             else:
                 self.stride_length.append(length)
                 wifi_steps.append(pred_next_step)
