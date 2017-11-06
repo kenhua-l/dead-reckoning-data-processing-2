@@ -4,7 +4,7 @@ from WifiArea import WifiArea
 
 #CONSTANT
 SCALE = 27 # 1 meter is 27 pixels
-NORTH = 25 # north of map is 30 degree
+NORTH = 31 # north of map is 30 degree
 AVERAGE_STEP = 3 # quantized blocks away
 ORIGIN = (367, 1293) # in pixels (y is 1654-359)
 MAP_SIZE = (1770, 615) # in pixels - (590, 205) in quantized, and (65.56, 22.78) in meters
@@ -164,27 +164,25 @@ class MapObject(object):
         plt.plot()
 
     def plot_ground_truth(self, plt):
-        print self.path.ground_path[0]
         (x_truth, y_truth) = separate_tuple(self.path.ground_path)
-        plt.plot(x_truth, y_truth, 'bx')
+        return plt.plot(x_truth, y_truth, 'bx')
 
     def plot_dr(self, plt):
-        print self.path.dr_path[0]
         (x_dr, y_dr) = separate_tuple(self.path.dr_path)
-        plt.plot(x_dr, y_dr, 'ro')
+        return plt.plot(x_dr, y_dr, 'ro')
 
     def plot_map_matching(self, plt):
         print self.path.dr_map_path[0]
         (x_map, y_map) = separate_tuple(self.path.dr_map_path)
-        plt.plot(x_map, y_map, 'ys')
+        return plt.plot(x_map, y_map, 'ys')
 
     def plot_wifi_correction(self, plt):
         (x_wifi, y_wifi) = separate_tuple(self.path.wifi_path)
-        plt.plot(x_wifi, y_wifi, 'gx')
+        return plt.plot(x_wifi, y_wifi, 'g^')
 
     def plot_hybrid_correction(self, plt):
         (x_hybrid, y_hybrid) = separate_tuple(self.path.hybrid_path)
-        plt.plot(x_hybrid, y_hybrid, 'r^')
+        return plt.plot(x_hybrid, y_hybrid, 'k*')
 
     def check_map(self, plt): # don't use unless needed because takes time to draw
         # x_points = range(ORIGIN[0] + (3 * (0+1) - 1), ORIGIN[0] + (3 * (388+1) - 1))

@@ -13,23 +13,27 @@ def main():
 
     # Draw the origin point
     map_image = MapObject(folder)
-    map_image.plot_important_points(plt)
+    # map_image.plot_important_points(plt)
 
     # Draw Ground Truth
-    map_image.plot_ground_truth(plt)
+    ground, = map_image.plot_ground_truth(plt)
 
     # Draw DR
-    map_image.plot_dr(plt)
+    dr, = map_image.plot_dr(plt)
 
     # Draw map-correction
-    map_image.plot_map_matching(plt)
+    # map_dr, = map_image.plot_map_matching(plt)
 
     # Draw wifi_correction
-    map_image.plot_wifi_correction(plt)
+    # wifi, = map_image.plot_wifi_correction(plt)
 
     # Draw hybrid_correction
-    map_image.plot_hybrid_correction(plt)
+    hybrid, = map_image.plot_hybrid_correction(plt)
 
+    # plt.legend([ground, dr], ['Ground Truth', 'Dead-Reckoning'])
+    # plt.legend([ground, dr, map_dr], ['Ground Truth', 'Dead-Reckoning', 'Map Matching'])
+    # plt.legend([ground, dr, wifi], ['Ground Truth', 'Dead-Reckoning', 'WiFi'])
+    plt.legend([ground, dr, hybrid], ['Ground Truth', 'Dead-Reckoning', 'Hybrid'])
     plt.show()
     fig.savefig(folder+'/path.png', dpi=fig.dpi)
 
