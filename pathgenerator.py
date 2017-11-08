@@ -9,6 +9,11 @@ AVERAGE_STEP = 3 # quantized blocks away
 ORIGIN = (367, 1293) # in pixels (y is 1654-359)
 MAP_SIZE = (1770, 615) # in pixels - (590, 205) in quantized, and (65.56, 22.78) in meters
 
+def convert_px_to_meters((x,y)):
+    m_x = (x - ORIGIN[0]) / SCALE
+    m_y = (ORIGIN[1] - y) / SCALE
+    return m_x, m_y
+
 # converts m to px to draw on map - returns two values, not tuple
 def convert_m_to_px((x,y)):
     real_x = x * SCALE + ORIGIN[0]
@@ -157,7 +162,7 @@ class MapObject(object):
         self.path = PathGen(folder, self.map_array_2d_obs)
 
     def plot_important_points(self, plt):
-        print self.path.start_point
+        # print self.path.start_point
         plt.plot(ORIGIN[0], ORIGIN[1], 'r^')
         plt.plot(ORIGIN[0]+self.map_size[0], ORIGIN[1]-self.map_size[1], 'r^')
 
@@ -172,7 +177,6 @@ class MapObject(object):
         return plt.plot(x_dr, y_dr, 'ro')
 
     def plot_map_matching(self, plt):
-        print self.path.dr_map_path[0]
         (x_map, y_map) = separate_tuple(self.path.dr_map_path)
         return plt.plot(x_map, y_map, 'ys')
 
@@ -200,6 +204,22 @@ class MapObject(object):
         # for row in self.map_array_2d_obs:
             # print row
 
+    def get_result(self):
+        start = self.path.start_point
+        ground_end = convert_px_to_meters(self.path.ground_path[-1])
+        dr_end = convert_px_to_meters(self.path.dr_path[-1])
+        map_end = convert_px_to_meters(self.path.dr_map_path[-1])
+        wifi_end = convert_px_to_meters(self.path.wifi_path[-1])
+        hybrid_end = convert_px_to_meters(self.path.hybrid_path[-1])
+        print "End", ground_end
+        print "DR", dr_end
+        print "Map", map_end
+        print "wifi", wifi_end
+        print "hybrid", hybrid_end
+        print math.sqrt(pow(ground_end[0]-dr_end[0], 2) + pow(ground_end[1]-dr_end[1], 2))
+        print math.sqrt(pow(ground_end[0]-map_end[0], 2) + pow(ground_end[1]-map_end[1], 2))
+        print math.sqrt(pow(ground_end[0]-wifi_end[0], 2) + pow(ground_end[1]-wifi_end[1], 2))
+        print math.sqrt(pow(ground_end[0]-hybrid_end[0], 2) + pow(ground_end[1]-hybrid_end[1], 2))
 
     def quantize_obs_block(self):
         # set up obstacles based on map
