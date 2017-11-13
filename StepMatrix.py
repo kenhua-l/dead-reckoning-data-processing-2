@@ -17,19 +17,19 @@ def quantize_pixel(coord):
 # comp vision coord system
 def discretize_direction(angle):
     direction = 4
-    if angle > 22 and angle < 67:
+    if angle >= 23 and angle < 68:
         direction = 3
-    elif angle > 68 and angle < 112:
+    elif angle >= 68 and angle < 113:
         direction = 2
-    elif angle > 113 and angle < 157:
+    elif angle >= 113 and angle < 158:
         direction = 1
-    elif angle > 158 and angle < 202:
+    elif angle >= 158 and angle < 203:
         direction = 0
-    elif angle > 203 and angle < 247:
+    elif angle >= 203 and angle < 248:
         direction = 7
-    elif angle > 248 and angle < 292:
+    elif angle >= 248 and angle < 293:
         direction = 6
-    elif angle > 293 and angle < 337:
+    elif angle >= 293 and angle < 338:
         direction = 5
     else:
         direction = 4
